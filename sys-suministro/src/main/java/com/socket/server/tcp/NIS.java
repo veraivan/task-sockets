@@ -3,7 +3,10 @@ package com.socket.server.tcp;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NIS extends Thread {
 
@@ -11,9 +14,8 @@ public class NIS extends Thread {
     private Socket socket;
     private String estado;
 
-    public NIS(Socket socket, Integer idNis) {
+    public NIS(Socket socket) {
         this.socket = socket;
-        this.idNis = idNis;
         this.estado = "conectado";
     }
     
@@ -22,29 +24,66 @@ public class NIS extends Thread {
 
         try {
 
-            InputStreamReader in = new InputStreamReader(this.socket.getInputStream());
-            BufferedReader bf = new BufferedReader(in);
-            String fromClient;
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            InputStreamReader inputReader = new InputStreamReader(this.socket.getInputStream());
+            BufferedReader in = new BufferedReader(inputReader);
+
+            Map<String, Object> map = new HashMap<String, Object>();            
+            String options;
 
             while ( !this.socket.isClosed() ) {
-                fromClient = bf.readLine();
+                options = in.readLine();
+                if ( options.equals("1") ) {
 
-                if ( fromClient.equals("1") ) {
-                    //agregar
                 }
-                else if ( fromClient.equals("2") ) {
-                    //agregar
+                else if ( options.equals("2") ) {
+                    
+                }
+                else if ( options.equals("3") ) {
+                    out.println("Número de NIS: ");
+                    String n = in.readLine();
+                    this.idNis = Integer.parseInt(n);
+                    map.put("estado", 0);
+                    map.put("mensaje", "ok");
+                    map.put("tipo_operacion", "conexión_suministro");
+                    out.println(map.toString());
+                }
+
+                else if ( options.equals("4") ) {
+                    this.estado = "desconectado";
+                    map.put("estado", 0);
+                    map.put("mensaje", "ok");
+                    map.put("tipo_operacion", "desconexión_suministro");
+                    out.println(map.toString());
+                    this.estado = "desconectado";
+                    this.socket.close();
+                }
+
+                else if ( options.equals("5") ) {
+                    String rp = TCPServer.listarActivos();
+                    out.println(rp);
+                    map.put("estado", 0);
+                    map.put("mensaje", "ok");
+                    map.put("tipo_operacion", "nis_activos");
+                    out.println(map.toString());
+                }
+
+                else if ( options.equals("6") ) {
+                    String rp = TCPServer.listarInactivos();
+                    out.println(rp);
+                    map.put("estado", 0);
+                    map.put("mensaje", "ok");
+                    map.put("tipo_operacion", "nis_inactivos");
+                    out.println(map.toString());
+                }
+                else {
+                    System.out.println(options);
                 }
             }
 
-
+            out.close();
+            inputReader.close();
             in.close();
-            bf.close();
-
-            /*PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
-            printWriter.println("asdasdddasdasd");
-
-            printWriter.close(); */       
 
         } catch (IOException e) {
             System.out.println(e);
